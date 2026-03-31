@@ -1,0 +1,115 @@
+[build-system]
+requires = ["pdm-backend>=2.4.0"]
+build-backend = "pdm.backend"
+
+[project]
+name = "ooai-promptdb"
+version = "0.1.0"
+description = "Prompt registry and runtime delivery scaffold for LangChain and LangGraph."
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [{ name = "William R. Astley" }]
+license = { text = "MIT" }
+dependencies = [
+  "fastapi>=0.115.0",
+  "uvicorn[standard]>=0.34.0",
+  "pydantic>=2.11.0",
+  "pydantic-settings>=2.7.0",
+  "sqlalchemy>=2.0.38",
+  "alembic>=1.15.0",
+  "jinja2>=3.1.5",
+  "httpx>=0.28.1",
+  "pyyaml>=6.0.2",
+  "langchain-core>=0.3.0",
+  "langgraph>=0.2.0",
+  "rich>=13.9.4",
+]
+
+
+[project.scripts]
+promptdb = "promptdb.cli:main"
+
+[project.optional-dependencies]
+minio = ["minio>=7.2.15"]
+redis = ["redis[hiredis]>=5.2.1"]
+observability = [
+  "prometheus-client>=0.21.1",
+  "structlog>=25.1.0",
+  "opentelemetry-api>=1.31.1",
+  "opentelemetry-sdk>=1.31.1",
+  "opentelemetry-exporter-otlp-proto-http>=1.31.1",
+  "opentelemetry-instrumentation-fastapi>=0.52b1",
+  "opentelemetry-instrumentation-sqlalchemy>=0.52b1",
+]
+dashboard = ["streamlit>=1.43.0", "pandas>=2.2.3"]
+docs = [
+  "sphinx>=8.2.3",
+  "furo>=2024.8.6",
+  "myst-parser>=4.0.1",
+  "sphinx-autodoc-typehints>=2.5.0",
+  "sphinx-copybutton>=0.5.2",
+  "sphinx-design>=0.6.1",
+  "sphinxcontrib-mermaid>=1.0.0",
+]
+test = [
+  "pytest>=8.3.5",
+  "pytest-cov>=6.0.0",
+  "pytest-asyncio>=0.26.0",
+]
+dev = [
+  "ruff>=0.11.2",
+  "mypy>=1.15.0",
+]
+
+[tool.pdm]
+distribution = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra --strict-markers --strict-config"
+testpaths = ["tests"]
+markers = [
+  "unit: fast, isolated tests",
+  "integration: tests with persistence and storage",
+  "e2e: API boundary tests",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["src/promptdb"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "N", "D"]
+ignore = ["D203", "D213"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+python_version = "3.13"
+warn_unused_configs = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+strict_optional = true
+plugins = ["pydantic.mypy"]
+
+[tool.pdm.scripts]
+test = "pytest"
+unit = "pytest -m unit"
+integration = "pytest -m integration"
+e2e = "pytest -m e2e"
+lint = "ruff check ."
+format = "ruff format ."
+docs = "sphinx-build -W --keep-going -b html docs/source docs/build/html"
+docs-linkcheck = "sphinx-build -W --keep-going -b linkcheck docs/source docs/build/linkcheck"
+build = "pdm build"
+dashboard = "streamlit run src/promptdb/dashboard_streamlit/app.py"
+promptdb = "python -m promptdb"

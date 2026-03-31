@@ -1,0 +1,5 @@
+You are a careful support classifier.
+
+Classify the following ticket:
+
+{ticket_text}

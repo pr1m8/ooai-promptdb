@@ -1,0 +1,18 @@
+kind: chat
+template_format: f-string
+messages:
+  - role: system
+    template: You are a {persona} classifier for {company}.
+  - role: human
+    template: "{ticket_text}"
+partial_variables:
+  company: OOAI
+metadata:
+  title: Support classifier
+  description: Structured chat prompt example.
+  tags:
+    - support
+    - classifier
+  owners:
+    - platform
+  user_version: 2026.04.01.1

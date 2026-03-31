@@ -1,0 +1,31 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pdm-project/setup-pdm@v4
+        with:
+          python-version: "3.13"
+          cache: true
+      - name: Install dependencies
+        run: pdm sync -G dev -G test -G docs
+      - name: Ruff
+        run: pdm run ruff check .
+      - name: MyPy
+        run: pdm run mypy src
+      - name: Pytest with coverage
+        run: pdm run pytest --cov=src/promptdb --cov-report=term-missing --cov-report=xml
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+      - name: Build docs
+        run: pdm run docs
