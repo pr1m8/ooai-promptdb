@@ -114,6 +114,17 @@ strict_optional = true
 plugins = ["pydantic.mypy"]
 disable_error_code = ["prop-decorator"]
 
+[[tool.mypy.overrides]]
+module = [
+  "minio.*",
+  "prometheus_client.*",
+  "opentelemetry.*",
+  "streamlit.*",
+  "pandas.*",
+  "structlog.*",
+]
+ignore_missing_imports = true
+
 [tool.pdm.scripts]
 test = "pytest"
 unit = "pytest -m unit"
