@@ -21,7 +21,7 @@ from __future__ import annotations
 import logging
 
 
-def configure_logging(level: str = 'INFO') -> None:
+def configure_logging(level: str = "INFO") -> None:
     """Configure root logging.
 
     Args:
@@ -45,8 +45,8 @@ def configure_logging(level: str = 'INFO') -> None:
         handlers = [RichHandler(rich_tracebacks=True, markup=True)]
     logging.basicConfig(
         level=getattr(logging, level.upper()),
-        format='%(message)s' if handlers else '%(asctime)s %(levelname)s %(name)s %(message)s',
-        datefmt='[%X]',
+        format="%(message)s" if handlers else "%(asctime)s %(levelname)s %(name)s %(message)s",
+        datefmt="[%X]",
         handlers=handlers,
         force=True,
     )
@@ -99,5 +99,5 @@ def setup_otel(app: object, engine: object) -> None:
         from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
     except ImportError:
         return
-    FastAPIInstrumentor.instrument_app(app)
-    SQLAlchemyInstrumentor().instrument(engine=engine)
+    FastAPIInstrumentor.instrument_app(app)  # type: ignore[arg-type]
+    SQLAlchemyInstrumentor().instrument(engine=engine)  # type: ignore[arg-type]

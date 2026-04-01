@@ -75,7 +75,6 @@ class TemplateFormat(StrEnum):
     MUSTACHE = "mustache"
 
 
-
 class PromptAssetKind(StrEnum):
     """Kinds of relational asset records linked to a prompt version.
 
@@ -97,6 +96,7 @@ class PromptAssetKind(StrEnum):
     ATTACHMENT = "attachment"
     EXAMPLE_DATASET = "example_dataset"
     SNAPSHOT = "snapshot"
+
 
 class MessageRole(StrEnum):
     """Supported chat message roles.
@@ -485,7 +485,9 @@ class PromptSpec(BaseModel):
                         {
                             "role": message.role.value,
                             "content": render_template(
-                                message.template, example, self.template_format,
+                                message.template,
+                                example,
+                                self.template_format,
                             ),
                             "name": message.name,
                             "additional_kwargs": message.additional_kwargs,
@@ -777,7 +779,6 @@ class AliasMove(BaseModel):
     version_id: str
 
 
-
 class PromptAssetView(BaseModel):
     """Blob-backed asset metadata linked to a prompt version.
 
@@ -825,6 +826,7 @@ class PromptAssetView(BaseModel):
     metadata_json: dict[str, Any] = Field(default_factory=dict)
     created_at: str | None = None
 
+
 class PromptVersionView(BaseModel):
     """API-ready view over an immutable prompt version.
 
@@ -845,7 +847,11 @@ class PromptVersionView(BaseModel):
         None.
 
     Examples:
-        >>> view = PromptVersionView(version_id="v1", namespace="x", name="y", revision=1, spec=PromptSpec(kind=PromptKind.STRING, template="hi"))
+        >>> spec = PromptSpec(kind=PromptKind.STRING, template="hi")
+        >>> view = PromptVersionView(
+        ...     version_id="v1", namespace="x", name="y",
+        ...     revision=1, spec=spec,
+        ... )
         >>> view.revision
         1
     """
@@ -878,7 +884,12 @@ class PromptVersionView(BaseModel):
             None.
 
         Examples:
-            >>> PromptVersionView(version_id="v1", namespace="x", name="y", revision=1, spec=PromptSpec(kind=PromptKind.STRING, template="hi")).ref.full_name
+            >>> spec = PromptSpec(kind=PromptKind.STRING, template="hi")
+            >>> view = PromptVersionView(
+            ...     version_id="v1", namespace="x", name="y",
+            ...     revision=1, spec=spec,
+            ... )
+            >>> view.ref.full_name
             'x/y:v1'
         """
         return PromptRef(namespace=self.namespace, name=self.name, selector=self.version_id)
@@ -896,14 +907,26 @@ class PromptVersionView(BaseModel):
             TypeError: If the prompt kind is unsupported.
 
         Examples:
-            >>> view = PromptVersionView(version_id="v1", namespace="x", name="y", revision=1, spec=PromptSpec(kind=PromptKind.STRING, template="Hi {name}"))
+            >>> spec = PromptSpec(kind=PromptKind.STRING, template="Hi {name}")
+            >>> view = PromptVersionView(
+            ...     version_id="v1", namespace="x", name="y",
+            ...     revision=1, spec=spec,
+            ... )
             >>> view.render({"name": "Will"}).text
             'Hi Will'
         """
         ref = PromptRef(namespace=self.namespace, name=self.name, selector=self.version_id)
         if self.spec.kind is PromptKind.STRING:
-            return PromptRenderResult(ref=ref, version=self, text=self.spec.render_text(variables))
-        return PromptRenderResult(ref=ref, version=self, messages=self.spec.render_messages(variables))
+            return PromptRenderResult(
+                ref=ref,
+                version=self,
+                text=self.spec.render_text(variables),
+            )
+        return PromptRenderResult(
+            ref=ref,
+            version=self,
+            messages=self.spec.render_messages(variables),
+        )
 
     def as_langchain(self) -> Any:
         """Materialize the current version into a LangChain prompt.
@@ -918,7 +941,12 @@ class PromptVersionView(BaseModel):
             ImportError: If ``langchain-core`` is unavailable.
 
         Examples:
-            >>> PromptVersionView(version_id="v1", namespace="x", name="y", revision=1, spec=PromptSpec(kind=PromptKind.STRING, template="Hi {name}")).as_langchain().__class__.__name__
+            >>> spec = PromptSpec(kind=PromptKind.STRING, template="Hi {name}")
+            >>> view = PromptVersionView(
+            ...     version_id="v1", namespace="x", name="y",
+            ...     revision=1, spec=spec,
+            ... )
+            >>> view.as_langchain().__class__.__name__
             'PromptTemplate'
         """
         return self.spec.to_langchain()
@@ -936,7 +964,11 @@ class PromptVersionView(BaseModel):
             None.
 
         Examples:
-            >>> view = PromptVersionView(version_id="v1", namespace="x", name="y", revision=1, spec=PromptSpec(kind=PromptKind.STRING, template="Hi {name}"))
+            >>> spec = PromptSpec(kind=PromptKind.STRING, template="Hi {name}")
+            >>> view = PromptVersionView(
+            ...     version_id="v1", namespace="x", name="y",
+            ...     revision=1, spec=spec,
+            ... )
             >>> view.wrap().ref.full_name
             'x/y:v1'
         """
@@ -956,7 +988,11 @@ class ResolvedPrompt(BaseModel):
         None.
 
     Examples:
-        >>> version = PromptVersionView(version_id="v1", namespace="x", name="y", revision=1, spec=PromptSpec(kind=PromptKind.STRING, template="Hi {name}"))
+        >>> spec = PromptSpec(kind=PromptKind.STRING, template="Hi {name}")
+        >>> version = PromptVersionView(
+        ...     version_id="v1", namespace="x", name="y",
+        ...     revision=1, spec=spec,
+        ... )
         >>> ResolvedPrompt(version=version).ref.full_name
         'x/y:v1'
     """
@@ -980,7 +1016,10 @@ class ResolvedPrompt(BaseModel):
             None.
 
         Examples:
-            >>> version = PromptVersionView(version_id="v1", namespace="x", name="y", revision=1, spec=PromptSpec(kind=PromptKind.STRING, template="Hi {name}"))
+            >>> _s = PromptSpec(kind=PromptKind.STRING, template="Hi {name}")
+            >>> version = PromptVersionView(
+            ...     version_id="v1", namespace="x", name="y", revision=1, spec=_s,
+            ... )
             >>> ResolvedPrompt(version=version).ref.selector
             'v1'
         """
@@ -1003,7 +1042,10 @@ class ResolvedPrompt(BaseModel):
             ImportError: If ``langchain-core`` is unavailable.
 
         Examples:
-            >>> version = PromptVersionView(version_id="v1", namespace="x", name="y", revision=1, spec=PromptSpec(kind=PromptKind.STRING, template="Hi {name}"))
+            >>> _s = PromptSpec(kind=PromptKind.STRING, template="Hi {name}")
+            >>> version = PromptVersionView(
+            ...     version_id="v1", namespace="x", name="y", revision=1, spec=_s,
+            ... )
             >>> ResolvedPrompt(version=version).as_langchain().__class__.__name__
             'PromptTemplate'
         """
@@ -1022,7 +1064,10 @@ class ResolvedPrompt(BaseModel):
             TypeError: If the prompt kind and helper mismatch.
 
         Examples:
-            >>> version = PromptVersionView(version_id="v1", namespace="x", name="y", revision=1, spec=PromptSpec(kind=PromptKind.STRING, template="Hi {name}"))
+            >>> _s = PromptSpec(kind=PromptKind.STRING, template="Hi {name}")
+            >>> version = PromptVersionView(
+            ...     version_id="v1", namespace="x", name="y", revision=1, spec=_s,
+            ... )
             >>> ResolvedPrompt(version=version).render({"name": "Will"}).text
             'Hi Will'
         """
@@ -1041,7 +1086,10 @@ class ResolvedPrompt(BaseModel):
             TypeError: If the wrapped prompt is not a string prompt.
 
         Examples:
-            >>> version = PromptVersionView(version_id="v1", namespace="x", name="y", revision=1, spec=PromptSpec(kind=PromptKind.STRING, template="Hi {name}"))
+            >>> _s = PromptSpec(kind=PromptKind.STRING, template="Hi {name}")
+            >>> version = PromptVersionView(
+            ...     version_id="v1", namespace="x", name="y", revision=1, spec=_s,
+            ... )
             >>> ResolvedPrompt(version=version).render_text({"name": "Will"})
             'Hi Will'
         """
@@ -1063,7 +1111,11 @@ class ResolvedPrompt(BaseModel):
             TypeError: If the wrapped prompt is not a chat prompt.
 
         Examples:
-            >>> version = PromptVersionView(version_id="v1", namespace="x", name="y", revision=1, spec=PromptSpec(kind=PromptKind.CHAT, messages=[ChatMessage(role=MessageRole.HUMAN, template="{question}")]))
+            >>> _msg = ChatMessage(role=MessageRole.HUMAN, template="{question}")
+            >>> _s = PromptSpec(kind=PromptKind.CHAT, messages=[_msg])
+            >>> version = PromptVersionView(
+            ...     version_id="v1", namespace="x", name="y", revision=1, spec=_s,
+            ... )
             >>> ResolvedPrompt(version=version).render_messages({"question": "Hi"})[0]["content"]
             'Hi'
         """
@@ -1085,7 +1137,10 @@ class ResolvedPrompt(BaseModel):
             AttributeError: If the underlying object lacks ``invoke``.
 
         Examples:
-            >>> version = PromptVersionView(version_id="v1", namespace="x", name="y", revision=1, spec=PromptSpec(kind=PromptKind.STRING, template="Hi {name}"))
+            >>> _s = PromptSpec(kind=PromptKind.STRING, template="Hi {name}")
+            >>> version = PromptVersionView(
+            ...     version_id="v1", namespace="x", name="y", revision=1, spec=_s,
+            ... )
             >>> ResolvedPrompt(version=version).invoke({"name": "Will"}).text
             'Hi Will'
         """
@@ -1109,8 +1164,12 @@ class PromptRenderResult(BaseModel):
         None.
 
     Examples:
-        >>> view = PromptVersionView(version_id="v1", namespace="x", name="y", revision=1, spec=PromptSpec(kind=PromptKind.STRING, template="hi"))
-        >>> PromptRenderResult(ref=PromptRef(namespace="x", name="y"), version=view, text="hi").text
+        >>> _s = PromptSpec(kind=PromptKind.STRING, template="hi")
+        >>> view = PromptVersionView(
+        ...     version_id="v1", namespace="x", name="y", revision=1, spec=_s,
+        ... )
+        >>> ref = PromptRef(namespace="x", name="y")
+        >>> PromptRenderResult(ref=ref, version=view, text="hi").text
         'hi'
     """
 

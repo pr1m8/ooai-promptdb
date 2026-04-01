@@ -333,10 +333,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         console.print(Panel.fit(f"[success]Rendered[/success] {args.ref}", title="promptdb"))
         console.print(JSON.from_data(result.model_dump(mode="json")))
         if result.text:
-            console.print(Panel(
-                Syntax(result.text, "markdown", line_numbers=False),
-                title="Rendered text",
-            ))
+            console.print(
+                Panel(
+                    Syntax(result.text, "markdown", line_numbers=False),
+                    title="Rendered text",
+                )
+            )
         return 0
 
     if args.command == "export-file":

@@ -87,25 +87,29 @@ class PromptORM(Base):
         'support'
     """
 
-    __tablename__ = 'prompts'
-    __table_args__ = (
-        UniqueConstraint('namespace', 'name', name='uq_prompts_namespace_name'),
-    )
+    __tablename__ = "prompts"
+    __table_args__ = (UniqueConstraint("namespace", "name", name="uq_prompts_namespace_name"),)
 
     id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=lambda: str(uuid.uuid4()),
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid.uuid4()),
     )
     namespace: Mapped[str] = mapped_column(String(255), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False), nullable=False, server_default=func.now(),
+        DateTime(timezone=False),
+        nullable=False,
+        server_default=func.now(),
     )
 
     versions: Mapped[list[PromptVersionORM]] = relationship(
-        back_populates='prompt', cascade='all, delete-orphan',
+        back_populates="prompt",
+        cascade="all, delete-orphan",
     )
     aliases: Mapped[list[PromptAliasORM]] = relationship(
-        back_populates='prompt', cascade='all, delete-orphan',
+        back_populates="prompt",
+        cascade="all, delete-orphan",
     )
 
 
@@ -126,36 +130,45 @@ class PromptVersionORM(Base):
         1
     """
 
-    __tablename__ = 'prompt_versions'
+    __tablename__ = "prompt_versions"
     __table_args__ = (
         UniqueConstraint(
-            'prompt_id', 'revision',
-            name='uq_prompt_versions_prompt_revision',
+            "prompt_id",
+            "revision",
+            name="uq_prompt_versions_prompt_revision",
         ),
     )
 
     id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=lambda: str(uuid.uuid4()),
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid.uuid4()),
     )
     prompt_id: Mapped[str] = mapped_column(
-        ForeignKey('prompts.id', ondelete='CASCADE'), nullable=False,
+        ForeignKey("prompts.id", ondelete="CASCADE"),
+        nullable=False,
     )
     revision: Mapped[int] = mapped_column(Integer, nullable=False)
     user_version: Mapped[str | None] = mapped_column(
-        String(255), nullable=True,
+        String(255),
+        nullable=True,
     )
     spec_json: Mapped[str] = mapped_column(Text, nullable=False)
     spec_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     created_by: Mapped[str | None] = mapped_column(
-        String(255), nullable=True,
+        String(255),
+        nullable=True,
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False), nullable=False, server_default=func.now(),
+        DateTime(timezone=False),
+        nullable=False,
+        server_default=func.now(),
     )
 
-    prompt: Mapped[PromptORM] = relationship(back_populates='versions')
+    prompt: Mapped[PromptORM] = relationship(back_populates="versions")
     assets: Mapped[list[PromptAssetORM]] = relationship(
-        back_populates='version', cascade='all, delete-orphan',
+        back_populates="version",
+        cascade="all, delete-orphan",
     )
 
 
@@ -176,30 +189,37 @@ class PromptAliasORM(Base):
         'latest'
     """
 
-    __tablename__ = 'prompt_aliases'
+    __tablename__ = "prompt_aliases"
     __table_args__ = (
         UniqueConstraint(
-            'prompt_id', 'alias',
-            name='uq_prompt_aliases_prompt_alias',
+            "prompt_id",
+            "alias",
+            name="uq_prompt_aliases_prompt_alias",
         ),
     )
 
     id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=lambda: str(uuid.uuid4()),
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid.uuid4()),
     )
     prompt_id: Mapped[str] = mapped_column(
-        ForeignKey('prompts.id', ondelete='CASCADE'), nullable=False,
+        ForeignKey("prompts.id", ondelete="CASCADE"),
+        nullable=False,
     )
     alias: Mapped[str] = mapped_column(String(255), nullable=False)
     version_id: Mapped[str] = mapped_column(
-        ForeignKey('prompt_versions.id', ondelete='CASCADE'), nullable=False,
+        ForeignKey("prompt_versions.id", ondelete="CASCADE"),
+        nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False), nullable=False,
-        server_default=func.now(), onupdate=func.now(),
+        DateTime(timezone=False),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
     )
 
-    prompt: Mapped[PromptORM] = relationship(back_populates='aliases')
+    prompt: Mapped[PromptORM] = relationship(back_populates="aliases")
 
 
 class PromptAssetORM(Base):
@@ -223,35 +243,43 @@ class PromptAssetORM(Base):
         'x'
     """
 
-    __tablename__ = 'prompt_assets'
+    __tablename__ = "prompt_assets"
 
     id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=lambda: str(uuid.uuid4()),
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid.uuid4()),
     )
     version_id: Mapped[str] = mapped_column(
-        ForeignKey('prompt_versions.id', ondelete='CASCADE'),
-        nullable=False, index=True,
+        ForeignKey("prompt_versions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     kind: Mapped[str] = mapped_column(String(64), nullable=False)
     storage_backend: Mapped[str] = mapped_column(
-        String(64), nullable=False,
+        String(64),
+        nullable=False,
     )
     bucket: Mapped[str] = mapped_column(String(255), nullable=False)
     object_key: Mapped[str] = mapped_column(String(1024), nullable=False)
     content_type: Mapped[str | None] = mapped_column(
-        String(255), nullable=True,
+        String(255),
+        nullable=True,
     )
     byte_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
     checksum_sha256: Mapped[str | None] = mapped_column(
-        String(64), nullable=True,
+        String(64),
+        nullable=True,
     )
     metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False), nullable=False, server_default=func.now(),
+        DateTime(timezone=False),
+        nullable=False,
+        server_default=func.now(),
     )
 
     version: Mapped[PromptVersionORM] = relationship(
-        back_populates='assets',
+        back_populates="assets",
     )
 
 
@@ -274,7 +302,9 @@ def create_session_factory(database_url: str) -> sessionmaker[Session]:
     """
     engine = create_engine(database_url, future=True)
     return sessionmaker(
-        bind=engine, class_=Session, expire_on_commit=False,
+        bind=engine,
+        class_=Session,
+        expire_on_commit=False,
     )
 
 
@@ -320,7 +350,10 @@ class PromptRepository:
         self.session = session
 
     def get_or_create_prompt(
-        self, *, namespace: str, name: str,
+        self,
+        *,
+        namespace: str,
+        name: str,
     ) -> PromptORM:
         """Get or create a logical prompt row.
 
@@ -384,7 +417,8 @@ class PromptRepository:
                 )
         """
         prompt = self.get_or_create_prompt(
-            namespace=namespace, name=name,
+            namespace=namespace,
+            name=name,
         )
         revision = self.session.scalar(
             select(func.max(PromptVersionORM.revision)).where(
@@ -396,19 +430,17 @@ class PromptRepository:
             duplicate = self.session.scalar(
                 select(PromptVersionORM).where(
                     PromptVersionORM.prompt_id == prompt.id,
-                    PromptVersionORM.user_version
-                    == spec.metadata.user_version,
+                    PromptVersionORM.user_version == spec.metadata.user_version,
                 ),
             )
             if duplicate is not None:
                 uv = spec.metadata.user_version
                 raise ValueError(
-                    f"Prompt {namespace}/{name} already has "
-                    f"user_version '{uv}'.",
+                    f"Prompt {namespace}/{name} already has user_version '{uv}'.",
                 )
         spec_json = spec.model_dump_json(exclude_computed_fields=True)
         spec_hash = hashlib.sha256(
-            spec_json.encode('utf-8'),
+            spec_json.encode("utf-8"),
         ).hexdigest()
         row = PromptVersionORM(
             prompt_id=prompt.id,
@@ -452,7 +484,9 @@ class PromptRepository:
         return row
 
     def list_assets(
-        self, *, version_id: str,
+        self,
+        *,
+        version_id: str,
     ) -> list[PromptAssetView]:
         """List blob assets linked to a prompt version."""
         rows = list(
@@ -473,12 +507,8 @@ class PromptRepository:
                 content_type=row.content_type,
                 byte_size=row.byte_size,
                 checksum_sha256=row.checksum_sha256,
-                metadata_json=json.loads(row.metadata_json or '{}'),
-                created_at=(
-                    row.created_at.isoformat()
-                    if row.created_at
-                    else None
-                ),
+                metadata_json=json.loads(row.metadata_json or "{}"),
+                created_at=(row.created_at.isoformat() if row.created_at else None),
             )
             for row in rows
         ]
@@ -520,7 +550,7 @@ class PromptRepository:
             ),
         )
         if prompt is None:
-            raise LookupError(f'Unknown prompt: {namespace}/{name}')
+            raise LookupError(f"Unknown prompt: {namespace}/{name}")
         row = self.session.scalar(
             select(PromptAliasORM).where(
                 PromptAliasORM.prompt_id == prompt.id,
@@ -529,7 +559,9 @@ class PromptRepository:
         )
         if row is None:
             row = PromptAliasORM(
-                prompt_id=prompt.id, alias=alias, version_id=version_id,
+                prompt_id=prompt.id,
+                alias=alias,
+                version_id=version_id,
             )
             self.session.add(row)
         else:
@@ -538,7 +570,11 @@ class PromptRepository:
         return row
 
     def resolve(
-        self, *, namespace: str, name: str, selector: str,
+        self,
+        *,
+        namespace: str,
+        name: str,
+        selector: str,
     ) -> PromptVersionView:
         """Resolve a selector into a prompt version.
 
@@ -568,21 +604,20 @@ class PromptRepository:
             ),
         )
         if prompt is None:
-            raise LookupError(f'Unknown prompt: {namespace}/{name}')
+            raise LookupError(f"Unknown prompt: {namespace}/{name}")
         version = self.session.scalar(
             select(PromptVersionORM).where(
                 PromptVersionORM.id == selector,
                 PromptVersionORM.prompt_id == prompt.id,
             ),
         )
-        if version is None and selector.startswith('rev:'):
-            revision_value = selector.removeprefix('rev:')
+        if version is None and selector.startswith("rev:"):
+            revision_value = selector.removeprefix("rev:")
             if revision_value.isdigit():
                 version = self.session.scalar(
                     select(PromptVersionORM).where(
                         PromptVersionORM.prompt_id == prompt.id,
-                        PromptVersionORM.revision
-                        == int(revision_value),
+                        PromptVersionORM.revision == int(revision_value),
                     ),
                 )
         if version is None:
@@ -605,7 +640,7 @@ class PromptRepository:
                     PromptVersionORM.user_version == selector,
                 ),
             )
-        if version is None and selector == 'latest':
+        if version is None and selector == "latest":
             version = self.session.scalar(
                 select(PromptVersionORM)
                 .where(PromptVersionORM.prompt_id == prompt.id)
@@ -614,8 +649,7 @@ class PromptRepository:
             )
         if version is None:
             raise LookupError(
-                f"Unable to resolve selector '{selector}' "
-                f"for {namespace}/{name}",
+                f"Unable to resolve selector '{selector}' for {namespace}/{name}",
             )
         aliases = list(
             self.session.scalars(

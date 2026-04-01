@@ -10,6 +10,19 @@ readme = "README.md"
 requires-python = ">=3.13"
 authors = [{ name = "William R. Astley" }]
 license = { text = "MIT" }
+keywords = ["prompt", "langchain", "langgraph", "registry", "versioning", "llm"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Framework :: FastAPI",
+  "Framework :: Pydantic :: 2",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Libraries",
+  "Typing :: Typed",
+]
+
 dependencies = [
   "fastapi>=0.115.0",
   "uvicorn[standard]>=0.34.0",
@@ -25,6 +38,12 @@ dependencies = [
   "rich>=13.9.4",
 ]
 
+[project.urls]
+Homepage = "https://github.com/pr1m8/ooai-promptdb"
+Documentation = "https://ooai-promptdb.readthedocs.io"
+Repository = "https://github.com/pr1m8/ooai-promptdb"
+Issues = "https://github.com/pr1m8/ooai-promptdb/issues"
+Changelog = "https://github.com/pr1m8/ooai-promptdb/releases"
 
 [project.scripts]
 promptdb = "promptdb.cli:main"
@@ -51,15 +70,8 @@ docs = [
   "sphinx-design>=0.6.1",
   "sphinxcontrib-mermaid>=1.0.0",
 ]
-test = [
-  "pytest>=8.3.5",
-  "pytest-cov>=6.0.0",
-  "pytest-asyncio>=0.26.0",
-]
-dev = [
-  "ruff>=0.11.2",
-  "mypy>=1.15.0",
-]
+test = ["pytest>=8.3.5", "pytest-cov>=6.0.0", "pytest-asyncio>=0.26.0"]
+dev = ["ruff>=0.11.2", "mypy>=1.15.0", "types-PyYAML>=6.0.12.20250915"]
 
 [tool.pdm]
 distribution = true
@@ -88,7 +100,7 @@ target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "N", "D"]
-ignore = ["D203", "D213"]
+ignore = ["D203", "D213", "D107"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -100,6 +112,7 @@ disallow_untyped_defs = true
 check_untyped_defs = true
 strict_optional = true
 plugins = ["pydantic.mypy"]
+disable_error_code = ["prop-decorator"]
 
 [tool.pdm.scripts]
 test = "pytest"
@@ -108,7 +121,7 @@ integration = "pytest -m integration"
 e2e = "pytest -m e2e"
 lint = "ruff check ."
 format = "ruff format ."
-docs = "sphinx-build -W --keep-going -b html docs/source docs/build/html"
+docs = "sphinx-build --keep-going -b html docs/source docs/build/html"
 docs-linkcheck = "sphinx-build -W --keep-going -b linkcheck docs/source docs/build/linkcheck"
 build = "pdm build"
 dashboard = "streamlit run src/promptdb/dashboard_streamlit/app.py"

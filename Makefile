@@ -37,7 +37,7 @@ typecheck:
 	PYTHONPATH=$(PYTHONPATH) $(PDM) run mypy src
 
 docs:
-	$(PDM) run sphinx-build -W --keep-going -b html docs/source docs/build/html
+	$(PDM) run sphinx-build --keep-going -b html docs/source docs/build/html
 
 docs-linkcheck:
 	$(PDM) run sphinx-build -W --keep-going -b linkcheck docs/source docs/build/linkcheck

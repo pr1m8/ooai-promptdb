@@ -39,28 +39,28 @@ def main() -> None:
 
             main()
     """
-    root = Path('.demo-langgraph')
+    root = Path(".demo-langgraph")
     root.mkdir(exist_ok=True)
     settings = AppSettings(
-        database_url=f'sqlite:///{root / "promptdb.sqlite3"}',
-        blob_root=str(root / 'blobs'),
+        database_url=f"sqlite:///{root / 'promptdb.sqlite3'}",
+        blob_root=str(root / "blobs"),
     )
     client = PromptClient.from_env(settings)
 
     spec = PromptSpec(
         kind=PromptKind.CHAT,
         messages=[
-            ChatMessage(role=MessageRole.SYSTEM, template='You are a research assistant.'),
-            ChatMessage(role=MessageRole.HUMAN, template='{question}'),
+            ChatMessage(role=MessageRole.SYSTEM, template="You are a research assistant."),
+            ChatMessage(role=MessageRole.HUMAN, template="{question}"),
         ],
     )
-    client.register_spec(namespace='research', name='answerer', spec=spec, alias='production')
+    client.register_spec(namespace="research", name="answerer", spec=spec, alias="production")
 
-    resolved = client.get('research/answerer:production')
+    resolved = client.get("research/answerer:production")
     langchain_prompt = resolved.as_langchain()
-    rendered_value = langchain_prompt.invoke({'question': 'What is PACELC?'})
+    rendered_value = langchain_prompt.invoke({"question": "What is PACELC?"})
     print(rendered_value)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

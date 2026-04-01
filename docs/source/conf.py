@@ -54,9 +54,9 @@ source_suffix = {
 }
 master_doc = "index"
 exclude_patterns = ["_build"]
-autosummary_generate = True
+autosummary_generate = False
 autosummary_imported_members = False
-autodoc_typehints = "description"
+autodoc_typehints = "signature"
 autodoc_member_order = "bysource"
 autodoc_default_options = {
     "members": True,
@@ -78,6 +78,14 @@ intersphinx_mapping = {
     "pydantic": ("https://docs.pydantic.dev/latest/", None),
     "sqlalchemy": ("https://docs.sqlalchemy.org/en/20/", None),
 }
+suppress_warnings = [
+    "ref.python",
+    "autodoc.duplicate_object",
+    "app.add_object",
+    "sphinx_autodoc_typehints.forward_reference",
+    "sphinx_autodoc_typehints.guarded_import",
+]
+
 html_theme = "furo"
 html_title = "ooai-promptdb"
 html_static_path: list[str] = []

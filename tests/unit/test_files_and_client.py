@@ -38,7 +38,7 @@ def test_prompt_client_get_returns_wrapped_prompt(tmp_path: Path) -> None:
     """Return a resolved prompt wrapper with convenience methods."""
     settings = AppSettings(
         database_url=f"sqlite:///{tmp_path / 'promptdb.sqlite3'}",
-        blob_root=str(tmp_path / 'blobs'),
+        blob_root=str(tmp_path / "blobs"),
     )
     client = PromptClient.from_env(settings)
     client.register_text(namespace="support", name="triage", template="Hello {name}")

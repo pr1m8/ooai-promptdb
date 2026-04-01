@@ -47,7 +47,7 @@ class LocalBlobStore:
     def __init__(self, root: str | Path) -> None:
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=True)
-        self.backend_name = 'local'
+        self.backend_name = "local"
         self.bucket_name = str(self.root)
 
     def _path(self, key: str | object) -> Path:
@@ -66,7 +66,7 @@ class LocalBlobStore:
             >>> LocalBlobStore('.tmp-blobs')._path('x.txt').name
             'x.txt'
         """
-        actual_key = getattr(key, 'object_key', key)
+        actual_key = getattr(key, "object_key", key)
         return self.root / str(actual_key)
 
     def put_text(self, key: str, content: str) -> str:
@@ -88,7 +88,7 @@ class LocalBlobStore:
         """
         path = self._path(key)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content, encoding='utf-8')
+        path.write_text(content, encoding="utf-8")
         return key
 
     def get_text(self, key: str) -> str:
@@ -109,7 +109,7 @@ class LocalBlobStore:
             >>> store.get_text('x.txt')
             'hello'
         """
-        return self._path(key).read_text(encoding='utf-8')
+        return self._path(key).read_text(encoding="utf-8")
 
     def presign_upload(self, key: str, *, expires_seconds: int = 3600) -> str:
         """Return a pseudo upload URL for local usage.
@@ -180,7 +180,7 @@ class MinioBlobStore:
             secure=secure,
         )
         self.bucket = bucket
-        self.backend_name = 'minio'
+        self.backend_name = "minio"
         self.bucket_name = bucket
         if not self.client.bucket_exists(bucket):
             self.client.make_bucket(bucket)
@@ -203,13 +203,13 @@ class MinioBlobStore:
 
                 store.put_text('exports/demo.txt', 'hello')
         """
-        payload = content.encode('utf-8')
+        payload = content.encode("utf-8")
         self.client.put_object(
             self.bucket,
             key,
             BytesIO(payload),
             len(payload),
-            content_type='text/plain; charset=utf-8',
+            content_type="text/plain; charset=utf-8",
         )
         return key
 
@@ -232,7 +232,7 @@ class MinioBlobStore:
         """
         response = self.client.get_object(self.bucket, key)
         try:
-            return response.read().decode('utf-8')
+            return response.read().decode("utf-8")
         finally:
             response.close()
             response.release_conn()
@@ -260,7 +260,6 @@ class MinioBlobStore:
             key,
             expires=dt.timedelta(seconds=expires_seconds),
         )
-
 
 
 def object_metadata(
@@ -291,13 +290,13 @@ def object_metadata(
     """
     import hashlib
 
-    payload = content.encode('utf-8') if content is not None else None
+    payload = content.encode("utf-8") if content is not None else None
     checksum = hashlib.sha256(payload).hexdigest() if payload is not None else None
     return {
-        'storage_backend': getattr(store, 'backend_name', store.__class__.__name__.lower()),
-        'bucket': getattr(store, 'bucket_name', ''),
-        'object_key': key,
-        'content_type': content_type,
-        'byte_size': len(payload) if payload is not None else None,
-        'checksum_sha256': checksum,
+        "storage_backend": getattr(store, "backend_name", store.__class__.__name__.lower()),
+        "bucket": getattr(store, "bucket_name", ""),
+        "object_key": key,
+        "content_type": content_type,
+        "byte_size": len(payload) if payload is not None else None,
+        "checksum_sha256": checksum,
     }

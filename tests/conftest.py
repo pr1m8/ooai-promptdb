@@ -39,13 +39,13 @@ def app_settings(tmp_path: Path) -> AppSettings:
     Examples:
         None.
     """
-    database_path = tmp_path / 'promptdb.sqlite3'
-    blob_root = tmp_path / 'blobs'
+    database_path = tmp_path / "promptdb.sqlite3"
+    blob_root = tmp_path / "blobs"
     return AppSettings(
-        database_url=f'sqlite:///{database_path}',
+        database_url=f"sqlite:///{database_path}",
         blob_root=str(blob_root),
-        storage_backend='local',
-        api_prefix='/api/v1',
+        storage_backend="local",
+        api_prefix="/api/v1",
     )
 
 
@@ -89,7 +89,7 @@ def service(tmp_path: Path):
 
     database_url = f"sqlite:///{tmp_path / 'promptdb.sqlite3'}"
     create_all(database_url)
-    return PromptService(create_session_factory(database_url), LocalBlobStore(tmp_path / 'blobs'))
+    return PromptService(create_session_factory(database_url), LocalBlobStore(tmp_path / "blobs"))
 
 
 @pytest.fixture()
@@ -108,13 +108,13 @@ def prompt_registration():
     from promptdb.domain import PromptKind, PromptMetadata, PromptRegistration, PromptSpec
 
     return PromptRegistration(
-        namespace='support',
-        name='triage',
+        namespace="support",
+        name="triage",
         spec=PromptSpec(
             kind=PromptKind.STRING,
-            template='Hello {name}',
-            metadata=PromptMetadata(user_version='fixture.1'),
+            template="Hello {name}",
+            metadata=PromptMetadata(user_version="fixture.1"),
         ),
-        created_by='pytest',
-        alias='production',
+        created_by="pytest",
+        alias="production",
     )

@@ -5,7 +5,7 @@
 groups = ["default", "dashboard", "dev", "docs", "minio", "observability", "redis", "test"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:e0a9697e7181bf9d467ce9817a67a983dfe8334b4a1189fc87ef3d87b4e411eb"
+content_hash = "sha256:fef9ef94d52ea1e991d262fb1f68722f75ff58757cd5670efa85f27cff41cb8a"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
@@ -2216,6 +2216,15 @@ files = [
     {file = "tornado-6.5.5-cp39-abi3-win_amd64.whl", hash = "sha256:6443a794ba961a9f619b1ae926a2e900ac20c34483eea67be4ed8f1e58d3ef7b"},
     {file = "tornado-6.5.5-cp39-abi3-win_arm64.whl", hash = "sha256:2c9a876e094109333f888539ddb2de4361743e5d21eece20688e3e351e4990a6"},
     {file = "tornado-6.5.5.tar.gz", hash = "sha256:192b8f3ea91bd7f1f50c06955416ed76c6b72f96779b962f07f911b91e8d30e9"},
+]
+
+[[package]]
+name = "types-pyyaml"
+version = "6.0.12.20250915"
+summary = ""
+files = [
+    {file = "types_pyyaml-6.0.12.20250915-py3-none-any.whl", hash = "sha256:e7d4d9e064e89a3b3cae120b4990cd370874d2bf12fa5f46c97018dd5d3c9ab6"},
+    {file = "types_pyyaml-6.0.12.20250915.tar.gz", hash = "sha256:0f8b54a528c303f0e6f7165687dd33fafa81c807fcac23f632b63aa624ced1d3"},
 ]
 
 [[package]]

@@ -3,7 +3,7 @@ FROM python:3.13-slim
 WORKDIR /app
 COPY . /app
 
-RUN pip install --no-cache-dir pdm && \
+RUN pip install --no-cache-dir pdm==2.22.4 && \
     pdm install -G minio -G redis -G observability
 
 EXPOSE 8000

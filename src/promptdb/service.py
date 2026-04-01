@@ -92,9 +92,20 @@ class PromptService:
                     version_id=version.id,
                 )
             session.commit()
-            return repository.resolve(namespace=registration.namespace, name=registration.name, selector=version.id)
+            return repository.resolve(
+                namespace=registration.namespace,
+                name=registration.name,
+                selector=version.id,
+            )
 
-    def move_alias(self, *, namespace: str, name: str, alias: str, version_id: str) -> PromptVersionView:
+    def move_alias(
+        self,
+        *,
+        namespace: str,
+        name: str,
+        alias: str,
+        version_id: str,
+    ) -> PromptVersionView:
         """Move an alias and return the target version.
 
         Args:
@@ -112,11 +123,16 @@ class PromptService:
         Examples:
             .. code-block:: python
 
-                view = service.move_alias(namespace='support', name='triage', alias='production', version_id='...')
+                view = service.move_alias(
+                    namespace='support', name='triage',
+                    alias='production', version_id='...',
+                )
         """
         with self.session_factory() as session:
             repository = PromptRepository(session)
-            repository.move_alias(namespace=namespace, name=name, alias=alias, version_id=version_id)
+            repository.move_alias(
+                namespace=namespace, name=name, alias=alias, version_id=version_id
+            )
             session.commit()
             return repository.resolve(namespace=namespace, name=name, selector=version_id)
 
@@ -157,7 +173,8 @@ class PromptService:
         Examples:
             .. code-block:: python
 
-                result = service.render(PromptRef(namespace='support', name='triage'), {'question': 'hello'})
+                ref = PromptRef(namespace='support', name='triage')
+                result = service.render(ref, {'question': 'hello'})
         """
         version = self.resolve(ref)
         return version.render(variables)
@@ -182,7 +199,9 @@ class PromptService:
         with self.session_factory() as session:
             return PromptRepository(session).list_versions()
 
-    def export_bundle(self, version: PromptVersionView, *, key_prefix: str = 'exports') -> PromptAssetView:
+    def export_bundle(
+        self, version: PromptVersionView, *, key_prefix: str = "exports"
+    ) -> PromptAssetView:
         """Export a prompt version bundle to blob storage.
 
         Args:
@@ -203,24 +222,26 @@ class PromptService:
         key = f"{key_prefix}/{version.namespace}/{version.name}/{version.version_id}.json"
         payload = version.model_dump_json(indent=2)
         self.blob_store.put_text(key, payload)
-        meta = object_metadata(self.blob_store, key, content=payload, content_type='application/json')
+        meta = object_metadata(
+            self.blob_store, key, content=payload, content_type="application/json"
+        )
         with self.session_factory() as session:
             repository = PromptRepository(session)
-            byte_size = meta['byte_size']
-            checksum = meta['checksum_sha256']
+            byte_size = meta["byte_size"]
+            checksum = meta["checksum_sha256"]
             repository.create_asset(
                 version_id=version.version_id,
                 kind=PromptAssetKind.EXPORT_BUNDLE,
-                storage_backend=str(meta['storage_backend']),
-                bucket=str(meta['bucket']),
-                object_key=str(meta['object_key']),
-                content_type='application/json',
+                storage_backend=str(meta["storage_backend"]),
+                bucket=str(meta["bucket"]),
+                object_key=str(meta["object_key"]),
+                content_type="application/json",
                 byte_size=int(byte_size) if isinstance(byte_size, int) else None,
                 checksum_sha256=str(checksum) if checksum is not None else None,
                 metadata_json={
-                    'namespace': version.namespace,
-                    'name': version.name,
-                    'revision': str(version.revision),
+                    "namespace": version.namespace,
+                    "name": version.name,
+                    "revision": str(version.revision),
                 },
             )
             session.commit()
@@ -263,5 +284,5 @@ class PromptService:
         """
         output_path = Path(path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(version.model_dump_json(indent=2), encoding='utf-8')
+        output_path.write_text(version.model_dump_json(indent=2), encoding="utf-8")
         return output_path

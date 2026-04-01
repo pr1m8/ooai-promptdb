@@ -3,7 +3,7 @@ name: release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
 
 permissions:
@@ -25,4 +25,4 @@ jobs:
       - name: Build distributions
         run: pdm build
       - name: Publish to PyPI
-        run: pdm publish
+        uses: pypa/gh-action-pypi-publish@release/v1

@@ -55,7 +55,8 @@ def _normalize_structured_payload(payload: dict[str, Any], source_path: Path) ->
         ValueError: If the payload shape is invalid.
 
     Examples:
-        >>> spec = _normalize_structured_payload({'kind': 'string', 'template': 'Hi {name}'}, Path('x.yaml'))
+        >>> payload = {'kind': 'string', 'template': 'Hi {name}'}
+        >>> spec = _normalize_structured_payload(payload, Path('x.yaml'))
         >>> spec.kind.value
         'string'
     """
@@ -107,7 +108,8 @@ def load_prompt_file(
     metadata = PromptMetadata(title=file_path.stem, source_path=str(file_path))
     if kind is PromptKind.STRING:
         return PromptSpec(kind=kind, template=body, metadata=metadata)
-    return PromptSpec(kind=kind, messages=[ChatMessage(role=message_role, template=body)], metadata=metadata)
+    messages = [ChatMessage(role=message_role, template=body)]
+    return PromptSpec(kind=kind, messages=messages, metadata=metadata)
 
 
 def save_prompt_spec(spec: PromptSpec, path: str | Path) -> Path:
