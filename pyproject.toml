@@ -4,7 +4,7 @@ build-backend = "pdm.backend"
 
 [project]
 name = "ooai-promptdb"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Prompt registry and runtime delivery scaffold for LangChain and LangGraph."
 readme = "README.md"
 requires-python = ">=3.13"
@@ -75,6 +75,10 @@ dev = ["ruff>=0.11.2", "mypy>=1.15.0", "types-PyYAML>=6.0.12.20250915"]
 
 [tool.pdm]
 distribution = true
+
+[tool.pdm.version]
+source = "scm"
+fallback_version = "0.0.0"
 
 [tool.pytest.ini_options]
 minversion = "8.0"

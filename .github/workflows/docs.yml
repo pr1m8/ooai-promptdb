@@ -3,6 +3,8 @@ name: docs
 on:
   push:
     branches: [main]
+    tags:
+      - "v*"
   pull_request:
   workflow_dispatch:
 
@@ -16,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: pdm-project/setup-pdm@v4
         with:
           python-version: "3.13"
@@ -30,7 +34,7 @@ jobs:
           path: docs/build/html
 
   deploy-docs:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     needs: build-docs
     runs-on: ubuntu-latest
     environment:

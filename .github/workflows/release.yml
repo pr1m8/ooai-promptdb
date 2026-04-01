@@ -4,20 +4,41 @@ on:
   push:
     tags:
       - "v*"
-  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 jobs:
-  publish:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pdm-project/setup-pdm@v4
+        with:
+          python-version: "3.13"
+          cache: true
+      - name: Install dependencies
+        run: pdm sync -G dev -G test
+      - name: Lint
+        run: pdm run ruff check .
+      - name: Type check
+        run: pdm run mypy src
+      - name: Test
+        run: pdm run pytest --cov=src/promptdb --cov-report=term-missing
+
+  publish-pypi:
+    needs: test
     runs-on: ubuntu-latest
     environment:
       name: pypi
       url: https://pypi.org/p/ooai-promptdb
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: pdm-project/setup-pdm@v4
         with:
           python-version: "3.13"
@@ -26,3 +47,38 @@ jobs:
         run: pdm build
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    needs: publish-pypi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Generate release notes
+        id: notes
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          PREV=$(git describe --tags --abbrev=0 "$TAG^" 2>/dev/null || echo "")
+          if [ -n "$PREV" ]; then
+            BODY=$(git log --pretty=format:"- %s" "$PREV..$TAG")
+          else
+            BODY=$(git log --pretty=format:"- %s" "$TAG")
+          fi
+          {
+            echo "body<<ENDOFNOTES"
+            echo "$BODY"
+            echo ""
+            echo "**PyPI**: https://pypi.org/project/ooai-promptdb/$TAG/"
+            echo "**Docs**: https://ooai-promptdb.readthedocs.io/en/$TAG/"
+            echo "ENDOFNOTES"
+          } >> "$GITHUB_OUTPUT"
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          gh release create "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$TAG" \
+            --notes "${{ steps.notes.outputs.body }}"

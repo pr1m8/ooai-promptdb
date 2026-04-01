@@ -32,7 +32,12 @@ sys.path.insert(0, str(SRC_ROOT))
 project = "ooai-promptdb"
 author = "William R. Astley"
 copyright = "2026, William R. Astley"
-release = "0.1.0"
+try:
+    from importlib.metadata import version as _pkg_version
+
+    release = _pkg_version("ooai-promptdb")
+except Exception:
+    release = "0.0.0"
 
 extensions = [
     "sphinx.ext.autodoc",
