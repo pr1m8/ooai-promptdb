@@ -5,108 +5,41 @@
 [![PyPI](https://img.shields.io/pypi/v/ooai-promptdb.svg)](https://pypi.org/project/ooai-promptdb/)
 [![Python](https://img.shields.io/pypi/pyversions/ooai-promptdb.svg)](https://pypi.org/project/ooai-promptdb/)
 [![License](https://img.shields.io/pypi/l/ooai-promptdb.svg)](LICENSE)
-[![Coverage](https://codecov.io/gh/pr1m8/ooai-promptdb/branch/main/graph/badge.svg)](https://codecov.io/gh/pr1m8/ooai-promptdb)
 
-A prompt registry and runtime delivery layer for LangChain and LangGraph, with relational versioning in Postgres or SQLite, blob-backed assets in local storage or MinIO, a FastAPI API, a Rich CLI, a Streamlit dashboard, Alembic migrations, and a testable developer workflow.
+A prompt registry and runtime delivery layer for LangChain and LangGraph.
 
-## Why this package exists
+## Why this exists
 
-Prompt-heavy applications usually end up with a messy mix of inline strings, YAML files, half-versioned edits, and manual environment promotion. `ooai-promptdb` gives you a cleaner split:
+Prompt-heavy LLM applications usually end up with a messy mix of inline strings, YAML files, half-versioned edits, and manual environment promotion. **promptdb** gives you a cleaner split:
 
-- **Prompt definitions and version metadata** live in a relational database.
-- **Large bundles and artifacts** live in local blob storage or MinIO.
-- **LangChain-compatible prompt objects** can be materialized at runtime.
-- **Aliases like `production` or `staging`** point at immutable versions.
-- **Files remain first-class** so prompts can stay in source control.
+- **Prompt definitions and version metadata** live in a relational database (Postgres or SQLite)
+- **Large bundles and artifacts** live in blob storage (local filesystem or MinIO)
+- **LangChain-compatible prompt objects** are materialized at runtime
+- **Aliases** like `production` or `staging` point at immutable versions — promotion is an alias move, not a code change
+- **Files remain first-class** — prompts can stay in source control as YAML, JSON, or plain text
 
-## Features
+## Install
 
-- typed prompt specs with metadata, user-facing version labels, tags, descriptions, partial variables, placeholders, and lightweight few-shot support
-- string and chat prompt rendering with ergonomic selectors such as `support/classifier:production`
-- file-native import and export for plain text, YAML, and JSON prompt specs
-- relational versioning, aliases, and asset metadata with SQLAlchemy and Alembic
-- local blob storage plus a MinIO adapter for export bundles and attachments
-- FastAPI service surface for registration, resolution, rendering, export, and asset listing
-- Rich-powered CLI for local operations
-- Streamlit dashboard scaffold
-- unit, integration, and e2e tests with coverage support
-- Sphinx docs, examples, GitHub Actions workflows, and Read the Docs configuration
+```bash
+pip install ooai-promptdb
+```
 
-## Architecture
+With optional extras:
 
-```text
-files / CLI / API / dashboard
-            |
-        prompt service
-       /               relational store    blob store
-(SQLAlchemy/Alembic) (local or MinIO)
-            |
-      LangChain materialization
-            |
-     LangGraph or app runtime
+```bash
+pip install ooai-promptdb[minio,redis,observability]
 ```
 
 ## Quick start
 
-### Install
-
-```bash
-pdm install -G dev -G test -G docs -G dashboard -G observability -G minio -G redis
-```
-
-### Bootstrap a workspace
-
-```bash
-pdm run promptdb init
-```
-
-That generates a small local workspace with:
-
-- `prompts/support_assistant.yaml`
-- `.env.example`
-- `build/`
-
-### Run the API
-
-```bash
-pdm run uvicorn promptdb.api:app --reload
-```
-
-### Run the dashboard
-
-```bash
-pdm run streamlit run src/promptdb/dashboard_streamlit/app.py
-```
-
-### Run tests with coverage
-
-```bash
-pdm run pytest --cov=src/promptdb --cov-report=term-missing --cov-report=xml
-```
-
-## Make targets
-
-A small `Makefile` is included so you do not have to remember the common PDM commands.
-
-```bash
-make install
-make test
-make cov
-make docs
-make api
-make dashboard
-make lint
-make format
-make all
-```
-
-## Developer usage
+### Python client
 
 ```python
 from promptdb import PromptClient, PromptKind, PromptMetadata
 
 client = PromptClient.from_env()
 
+# Register a prompt
 client.register_text(
     namespace="support",
     name="triage",
@@ -115,22 +48,31 @@ client.register_text(
     alias="production",
     metadata=PromptMetadata(
         title="Support triage",
-        description="Primary support triage prompt.",
         user_version="2026.04.01.1",
         tags=["support", "triage"],
     ),
     partial_variables={"persona": "senior support analyst"},
 )
 
+# Resolve and render
 resolved = client.get("support/triage:production")
 print(resolved.render_text({"question": "Where is my refund?"}))
+# => "You are a senior support analyst. Question: Where is my refund?"
 ```
 
-## Structured prompt files
+### LangChain materialization
 
-You can keep prompts in source control as YAML or JSON and register them directly.
+```python
+langchain_prompt = resolved.as_langchain()
+result = langchain_prompt.invoke({"question": "Where is my refund?"})
+```
+
+### Prompt files
+
+Keep prompts in source control as YAML:
 
 ```yaml
+# prompts/support_classifier.yaml
 kind: chat
 template_format: f-string
 messages:
@@ -142,73 +84,117 @@ partial_variables:
   company: OOAI
 metadata:
   title: Support classifier
-  description: Support ticket classification prompt.
   user_version: 2026.04.01.1
   tags: [support, classification]
 ```
 
 ```python
-from promptdb import PromptClient
-
-client = PromptClient.from_env()
 version = client.register_file(
     path="prompts/support_classifier.yaml",
     namespace="support",
     name="classifier",
     alias="production",
 )
-print(version.version_id)
 ```
 
-## CLI
+### CLI
 
 ```bash
-promptdb init
-promptdb list
+promptdb init                        # scaffold a workspace
+promptdb list                        # list all versions
+promptdb register-file prompts/support_classifier.yaml support classifier --alias production
 promptdb resolve support/classifier:production
 promptdb render support/classifier:production --var ticket_text="Refund missing"
-promptdb register-file prompts/support_classifier.yaml support classifier --alias production
 promptdb export-file support/classifier:production build/classifier.json
 ```
 
-## Relational assets + MinIO
-
-Prompt exports and attachments can live in local blob storage or MinIO, but they are also tracked relationally through the `prompt_assets` table. That table stores the owning prompt version, storage backend, bucket, object key, content type, byte size, and checksum so the API can query assets without scanning object storage.
-
-Run Alembic migrations before production startup:
+### HTTP API
 
 ```bash
-alembic upgrade head
+uvicorn promptdb.api:app --reload
 ```
-
-## Docs
-
-Build docs locally:
 
 ```bash
-pdm install -G docs
-pdm run docs
+# Register
+curl -X POST http://localhost:8000/api/v1/prompts/register \
+  -H 'Content-Type: application/json' \
+  -d '{"namespace":"support","name":"triage","alias":"production","spec":{"kind":"string","template":"Hello {name}"}}'
+
+# Resolve
+curl http://localhost:8000/api/v1/prompts/support/triage/resolve?selector=production
+
+# Render
+curl -X POST http://localhost:8000/api/v1/prompts/support/triage/render?selector=production \
+  -H 'Content-Type: application/json' \
+  -d '{"variables":{"name":"Will"}}'
 ```
 
-The repository also includes:
+## Architecture
 
-- `.github/workflows/ci.yml` for lint, types, tests, coverage, and docs
-- `.github/workflows/docs.yml` for documentation builds and Pages deployment
-- `.github/workflows/release.yml` for trusted PyPI releases on tags
-- `.readthedocs.yaml` for Read the Docs builds
+```text
+files / CLI / API / dashboard
+          |
+      PromptClient (client.py)  — ergonomic facade
+          |
+      PromptService (service.py) — orchestrates workflows
+       /          \
+  PromptRepository   BlobStore adapters
+  (db.py)            (storage.py)
+  SQLAlchemy ORM     LocalBlobStore | MinioBlobStore
+```
 
-## Coverage
+### Prompt references
 
-Coverage is configured through `pytest-cov` and `coverage.py`. Local coverage output goes to the terminal and `coverage.xml`, and CI uploads the XML artifact. The default source target is `src/promptdb`.
+Compact `namespace/name:selector` format with resolution order:
 
-## Project status
+1. Version UUID
+2. `rev:N` revision
+3. Alias (`production`, `staging`, `latest`)
+4. User version label (`2026.04.01.1`)
+5. `latest` fallback (highest revision)
 
-This is a strong scaffold and a runnable starting point, not a finished enterprise platform. The main extension areas are:
+### Features
 
-- broader LangChain prompt-class round-tripping
-- more complete MinIO presign and multipart flows
-- richer dashboard UX
-- stronger auth, multi-user, and RBAC workflows
+- String and chat prompts with f-string, Jinja2, and mustache templates
+- Partial variables, message placeholders, and few-shot examples
+- Immutable versions with movable aliases for environment promotion
+- File-native import/export (YAML, JSON, plain text)
+- Relational asset metadata for blob-backed exports
+- FastAPI with OpenAPI docs, Rich CLI, Streamlit dashboard scaffold
+- Prometheus metrics and OpenTelemetry instrumentation (optional)
+- Alembic migrations for schema evolution
+- `py.typed` marker for downstream type checking
+
+## Configuration
+
+All settings are read from `PROMPTDB_*` environment variables:
+
+| Variable                    | Default                        | Description                    |
+| --------------------------- | ------------------------------ | ------------------------------ |
+| `PROMPTDB_DATABASE_URL`     | `sqlite:///./promptdb.sqlite3` | SQLAlchemy database URL        |
+| `PROMPTDB_BLOB_ROOT`        | `.blobs`                       | Local blob storage directory   |
+| `PROMPTDB_STORAGE_BACKEND`  | `local`                        | `local` or `minio`             |
+| `PROMPTDB_MINIO_ENDPOINT`   | —                              | MinIO endpoint                 |
+| `PROMPTDB_MINIO_ACCESS_KEY` | —                              | MinIO access key               |
+| `PROMPTDB_MINIO_SECRET_KEY` | —                              | MinIO secret key               |
+| `PROMPTDB_ENABLE_METRICS`   | `false`                        | Prometheus `/metrics` endpoint |
+| `PROMPTDB_ENABLE_OTEL`      | `false`                        | OpenTelemetry instrumentation  |
+
+## Development
+
+```bash
+pdm install -G dev -G test -G docs -G dashboard -G observability -G minio -G redis
+make test          # run all tests
+make lint          # ruff check
+make typecheck     # mypy
+make docs          # sphinx build
+make all           # lint + typecheck + test + docs
+```
+
+## Documentation
+
+- [GitHub Pages](https://pr1m8.github.io/ooai-promptdb/)
+- [ReadTheDocs](https://ooai-promptdb.readthedocs.io) (when configured)
 
 ## License
 
