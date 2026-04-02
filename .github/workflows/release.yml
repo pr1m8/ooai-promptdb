@@ -43,7 +43,12 @@ jobs:
         with:
           python-version: "3.13"
           cache: true
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
       - name: Build distributions
+        env:
+          PDM_BUILD_SCM_VERSION: ${{ steps.version.outputs.version }}
         run: pdm build
       - name: Publish to PyPI
         env:

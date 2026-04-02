@@ -79,6 +79,7 @@ distribution = true
 [tool.pdm.version]
 source = "scm"
 fallback_version = "0.0.0"
+tag_regex = '^v(?P<version>\d+\.\d+\.\d+)$'
 
 [tool.pytest.ini_options]
 minversion = "8.0"
