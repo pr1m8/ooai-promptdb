@@ -1,23 +1,49 @@
-"""Domain models for :mod:`promptdb`.
+"""Core domain models for prompt definitions, rendering, and versioning.
 
-Purpose:
-    Define the prompt schema, metadata, references, version views, and render
-    results used by the package.
+This module contains every Pydantic model that flows through the system.
+Nothing here touches the database or filesystem — it is pure data and logic.
 
-Design:
-    :class:`PromptSpec` is the central abstraction. It supports both string and
-    chat prompts, message placeholders, partial variables, and a lightweight
-    few-shot block.
+Prompt kinds and template formats::
 
-Attributes:
-    PromptSpec: Main prompt definition model.
-    PromptMetadata: Dashboard- and API-friendly metadata.
-    PromptVersionView: Immutable view over a stored prompt version.
+    PromptKind.STRING   — single-template prompt, rendered to a string
+    PromptKind.CHAT     — multi-message prompt, rendered to a list of dicts
 
-Examples:
-    >>> spec = PromptSpec(kind=PromptKind.STRING, template="Hello {name}")
-    >>> spec.render_text({"name": "Will"})
-    'Hello Will'
+    TemplateFormat.FSTRING   — Python f-string syntax: ``{name}``
+    TemplateFormat.JINJA2    — Jinja2 syntax: ``{{ name }}``
+    TemplateFormat.MUSTACHE  — Mustache syntax: ``{{ name }}``
+
+Building a string prompt::
+
+    spec = PromptSpec(kind=PromptKind.STRING, template="Hello {name}")
+    spec.render_text({"name": "Will"})          # => "Hello Will"
+    spec.declared_variables                      # => ["name"]
+
+Building a chat prompt::
+
+    spec = PromptSpec(
+        kind=PromptKind.CHAT,
+        messages=[
+            ChatMessage(role=MessageRole.SYSTEM, template="You are {persona}."),
+            ChatMessage(role=MessageRole.HUMAN, template="{question}"),
+        ],
+        partial_variables={"persona": "a helpful assistant"},
+    )
+    spec.render_messages({"question": "Hi"})
+    # => [{"role": "system", "content": "You are a helpful assistant."}, ...]
+
+Prompt references::
+
+    ref = PromptRef.parse("support/triage:production")
+    ref.namespace   # => "support"
+    ref.name        # => "triage"
+    ref.selector    # => "production"
+
+Version views wrap a stored version with render and LangChain helpers::
+
+    view = PromptVersionView(...)
+    view.render({"name": "Will"})        # => PromptRenderResult
+    view.as_langchain()                  # => LangChain PromptTemplate
+    view.wrap()                          # => ResolvedPrompt (ergonomic wrapper)
 """
 
 from __future__ import annotations

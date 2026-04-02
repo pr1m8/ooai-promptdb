@@ -1,19 +1,31 @@
-"""Observability helpers for :mod:`promptdb`.
+"""Optional logging, metrics, and tracing helpers.
 
-Purpose:
-    Provide optional logging, Prometheus, and OpenTelemetry helpers.
+All dependencies are imported lazily so the base package works without
+installing the ``observability`` extra. Install it to enable these features::
 
-Design:
-    Imports are lazy so the base package stays lighter. When Rich is installed,
-    logging prefers :class:`rich.logging.RichHandler` for local development.
+    pip install ooai-promptdb[observability]
 
-Attributes:
-    configure_logging: Configure standard logging.
-    get_metrics_app: Return a Prometheus ASGI app when available.
-    setup_otel: Optionally enable OTel instrumentation.
+Logging — uses Rich handler when available::
 
-Examples:
-    >>> configure_logging('INFO')
+    from promptdb.observability import configure_logging
+    configure_logging("DEBUG")
+
+Prometheus metrics — returns an ASGI app to mount at ``/metrics``::
+
+    from promptdb.observability import get_metrics_app
+    metrics = get_metrics_app()    # None if prometheus_client not installed
+    if metrics:
+        app.mount("/metrics", metrics)
+
+OpenTelemetry — instruments FastAPI and SQLAlchemy::
+
+    from promptdb.observability import setup_otel
+    setup_otel(app, engine)        # no-op if opentelemetry not installed
+
+Enable via environment variables:
+
+- ``PROMPTDB_ENABLE_METRICS=true`` — auto-mounts Prometheus endpoint
+- ``PROMPTDB_ENABLE_OTEL=true`` — auto-instruments FastAPI + SQLAlchemy
 """
 
 from __future__ import annotations

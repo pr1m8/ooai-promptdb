@@ -1,19 +1,29 @@
-"""Application settings for :mod:`promptdb`.
+"""Environment-backed application configuration.
 
-Purpose:
-    Centralize environment-backed configuration for the API, database, storage,
-    and observability layers.
+All settings are read from ``PROMPTDB_*`` environment variables via
+Pydantic Settings. The defaults work for local development with SQLite and
+local blob storage — no external services required.
 
-Design:
-    The settings model reads environment variables only. Adapters and services
-    are constructed elsewhere.
+Environment variables:
 
-Attributes:
-    AppSettings: Typed settings model.
+- ``PROMPTDB_DATABASE_URL`` — SQLAlchemy URL (default: ``sqlite:///./promptdb.sqlite3``)
+- ``PROMPTDB_BLOB_ROOT`` — local blob directory (default: ``.blobs``)
+- ``PROMPTDB_STORAGE_BACKEND`` — ``local`` or ``minio`` (default: ``local``)
+- ``PROMPTDB_API_PREFIX`` — API route prefix (default: ``/api/v1``)
+- ``PROMPTDB_MINIO_ENDPOINT`` — MinIO host:port (required if ``minio``)
+- ``PROMPTDB_MINIO_ACCESS_KEY`` — MinIO access key
+- ``PROMPTDB_MINIO_SECRET_KEY`` — MinIO secret key
+- ``PROMPTDB_MINIO_BUCKET`` — MinIO bucket (default: ``promptdb``)
+- ``PROMPTDB_ENABLE_METRICS`` — mount Prometheus ``/metrics`` (default: false)
+- ``PROMPTDB_ENABLE_OTEL`` — enable OpenTelemetry instrumentation (default: false)
+- ``PROMPTDB_LOG_LEVEL`` — root log level (default: ``INFO``)
 
-Examples:
-    >>> AppSettings(database_url="sqlite:///./promptdb.sqlite3").api_prefix
-    '/api/v1'
+Usage::
+
+    from promptdb.settings import AppSettings
+
+    settings = AppSettings()                          # from env vars
+    settings = AppSettings(database_url="sqlite:///:memory:")  # explicit
 """
 
 from pydantic import Field

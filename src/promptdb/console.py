@@ -1,21 +1,22 @@
-"""Console helpers for :mod:`promptdb`.
+"""Shared Rich console factory for CLI output.
 
-Purpose:
-    Centralize Rich console creation so the CLI and examples use a consistent
-    presentation layer.
+Provides a consistently themed :class:`rich.console.Console` used by the CLI
+and examples. The theme defines semantic styles (``success``, ``error``,
+``warning``, ``info``, ``muted``, ``accent``) so output is visually consistent.
 
-Design:
-    The module exposes a single lazily configured :class:`rich.console.Console`
-    factory. The returned console is color-aware in terminals and plain enough
-    for snapshot-friendly test runs.
+Usage::
 
-Attributes:
-    get_console: Return a configured Rich console.
+    from promptdb.console import get_console
 
-Examples:
-    >>> console = get_console()
-    >>> console is not None
-    True
+    console = get_console()
+    console.print("[success]Done![/success]")
+    console.print("[error]Something went wrong[/error]")
+
+For test snapshots, pass ``record=True``::
+
+    console = get_console(record=True)
+    console.print("hello")
+    output = console.export_text()
 """
 
 from __future__ import annotations

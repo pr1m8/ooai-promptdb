@@ -1,23 +1,43 @@
-"""Package overview for :mod:`promptdb`.
+"""Prompt registry and runtime delivery layer for LangChain and LangGraph.
 
-Purpose:
-    Provide a prompt registry and runtime delivery layer for LangChain and
-    LangGraph applications.
+``promptdb`` lets you version, alias, and deliver prompts through a relational
+database, export them to blob storage, and access them from Python, a FastAPI
+API, a Rich CLI, or a Streamlit dashboard.
 
-Design:
-    The package centers on :class:`~promptdb.domain.PromptSpec`, which supports
-    string prompts, chat prompts, placeholders, lightweight few-shot examples,
-    metadata, user-facing version labels, LangChain materialization, and a
-    Rich-powered local CLI.
+Typical usage::
 
-Attributes:
-    __all__: Curated public API.
+    from promptdb import PromptClient, PromptKind, PromptMetadata
 
-Examples:
-    >>> from promptdb import PromptKind, PromptSpec
-    >>> spec = PromptSpec(kind=PromptKind.STRING, template="Hello {name}")
-    >>> spec.render_text({"name": "Will"})
-    'Hello Will'
+    client = PromptClient.from_env()
+
+    # Register a prompt
+    client.register_text(
+        namespace="support",
+        name="triage",
+        template="You are a {persona}. Question: {question}",
+        kind=PromptKind.STRING,
+        alias="production",
+        metadata=PromptMetadata(title="Triage", user_version="v1"),
+        partial_variables={"persona": "senior analyst"},
+    )
+
+    # Resolve and render
+    resolved = client.get("support/triage:production")
+    print(resolved.render_text({"question": "Where is my refund?"}))
+
+    # Materialize as a LangChain prompt
+    lc_prompt = resolved.as_langchain()
+
+Key components:
+
+- :class:`PromptClient` — ergonomic facade for all prompt operations
+- :class:`PromptSpec` — typed prompt definition (string or chat, with
+  template format, partials, few-shot, and metadata)
+- :class:`PromptRef` — compact ``namespace/name:selector`` reference
+- :class:`PromptVersionView` — immutable view of a stored version
+- :class:`ResolvedPrompt` — wrapper with render and LangChain helpers
+- :class:`PromptService` — orchestration layer shared by API and CLI
+- :class:`AppSettings` — ``PROMPTDB_*`` environment variable config
 """
 
 from promptdb.client import PromptClient

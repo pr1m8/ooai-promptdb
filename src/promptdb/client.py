@@ -1,33 +1,47 @@
-"""High-level ergonomic client APIs for :mod:`promptdb`.
+"""Ergonomic Python client for prompt registration, resolution, and rendering.
 
-Purpose:
-    Expose a compact, developer-friendly interface for registering, resolving,
-    rendering, and exporting prompts without forcing callers to manually build
-    service payloads.
+:class:`PromptClient` is the main entry point for application code. It wraps
+:class:`~promptdb.service.PromptService` and adds compact reference parsing,
+file-based registration, and a :class:`~promptdb.domain.ResolvedPrompt`
+wrapper with render and LangChain helpers.
 
-Design:
-    The client is intentionally local-first and wraps :class:`~promptdb.service.PromptService`.
-    It supports compact prompt references, file-based registration, and a rich
-    ``ResolvedPrompt`` wrapper for materialization and rendering.
+Creating a client::
 
-Attributes:
-    PromptClient: Main local client facade.
+    from promptdb import PromptClient
 
-Examples:
-    .. code-block:: python
+    # Reads PROMPTDB_* env vars (database URL, blob root, storage backend)
+    client = PromptClient.from_env()
 
-        from promptdb import PromptClient, PromptKind
+    # Or with explicit settings
+    from promptdb import AppSettings
+    client = PromptClient.from_env(AppSettings(
+        database_url="postgresql://user:pass@localhost/promptdb",
+    ))
 
-        client = PromptClient.from_env()
-        version = client.register_text(
-            namespace="support",
-            name="triage",
-            template="Hello {name}",
-            kind=PromptKind.STRING,
-            alias="production",
-        )
-        resolved = client.get("support/triage:production")
-        assert resolved.render_text({"name": "Will"}) == "Hello Will"
+Registering prompts — three approaches::
+
+    # 1. From inline text
+    client.register_text(
+        namespace="support", name="triage",
+        template="Hello {name}", kind=PromptKind.STRING,
+        alias="production",
+    )
+
+    # 2. From a PromptSpec object
+    client.register_spec(namespace="support", name="triage", spec=spec)
+
+    # 3. From a YAML/JSON/text file
+    client.register_file(path="prompts/triage.yaml",
+                         namespace="support", name="triage")
+
+Resolving and rendering::
+
+    resolved = client.get("support/triage:production")  # ResolvedPrompt
+    text = resolved.render_text({"name": "Will"})
+    lc = resolved.as_langchain()                        # LangChain prompt
+    value = resolved.invoke({"name": "Will"})           # LangChain invoke
+
+Selectors: ``latest``, ``production``, ``rev:2``, ``2026.04.01.1``, or a UUID.
 """
 
 from __future__ import annotations

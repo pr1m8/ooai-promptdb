@@ -1,21 +1,32 @@
-"""FastAPI application for :mod:`promptdb`.
+"""FastAPI HTTP API for prompt operations.
 
-Purpose:
-    Expose prompt registration, alias movement, resolution, rendering, listing,
-    and export workflows over HTTP.
+Exposes prompt registration, alias movement, resolution, rendering, version
+listing, and blob export over HTTP. Interactive OpenAPI docs are served at
+``/docs`` when the server is running.
 
-Design:
-    The app factory wires settings, storage, sessions, and observability. Local
-    development creates database tables on startup; production should still run
-    Alembic migrations.
+Starting the server::
 
-Attributes:
-    app: Default FastAPI application.
-    create_app: App factory.
+    uvicorn promptdb.api:app --reload
 
-Examples:
-    >>> create_app().title
-    'promptdb'
+Endpoints (all under ``/api/v1`` by default):
+
+- ``POST /prompts/register`` — register a new prompt version
+- ``GET  /prompts/{ns}/{name}/resolve?selector=...`` — resolve a reference
+- ``POST /prompts/{ns}/{name}/render?selector=...`` — render with variables
+- ``POST /prompts/{ns}/{name}/aliases/{alias}`` — move an alias
+- ``GET  /versions`` — list all stored versions
+- ``GET  /prompts/{ns}/{name}/assets?selector=...`` — list blob assets
+- ``GET  /exports/{ns}/{name}/{selector}`` — export to blob storage
+
+Using the app factory in tests or custom setups::
+
+    from promptdb.api import create_app
+    from promptdb.settings import AppSettings
+
+    app = create_app(AppSettings(database_url="sqlite:///:memory:"))
+
+The module-level ``app = create_app()`` instance is used by uvicorn. For
+production, run Alembic migrations before starting the server.
 """
 
 from __future__ import annotations

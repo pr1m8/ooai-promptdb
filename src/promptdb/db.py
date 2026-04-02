@@ -1,20 +1,46 @@
-"""Persistence layer for :mod:`promptdb`.
+"""SQLAlchemy persistence layer for prompts, versions, aliases, and assets.
 
-Purpose:
-    Define the SQLAlchemy schema and repository used by the package.
+This module defines four ORM tables and the :class:`PromptRepository` that
+reads and writes them:
 
-Design:
-    Prompt versions are immutable. Aliases point at a concrete version and can
-    move independently.
+- ``prompts`` — logical prompt identity (namespace + name)
+- ``prompt_versions`` — immutable version rows (spec JSON, hash, revision)
+- ``prompt_aliases`` — movable pointers (``production``, ``staging``, etc.)
+- ``prompt_assets`` — relational metadata for blob-backed export artifacts
 
-Attributes:
-    Base: Declarative ORM base.
-    PromptRepository: Repository for storing and resolving prompts.
+Versions are **immutable** — once created, a version's spec never changes.
+Aliases are **movable** — promoting a version to production is an alias move.
 
-Examples:
-    .. code-block:: python
+Creating tables and a session factory::
 
-        session_factory = create_session_factory('sqlite:///./promptdb.sqlite3')
+    from promptdb.db import create_all, create_session_factory
+
+    create_all("sqlite:///./promptdb.sqlite3")
+    factory = create_session_factory("sqlite:///./promptdb.sqlite3")
+
+Using the repository directly (normally the service does this)::
+
+    with factory() as session:
+        repo = PromptRepository(session)
+        version = repo.create_version(
+            namespace="support", name="triage", spec=spec,
+        )
+        repo.move_alias(
+            namespace="support", name="triage",
+            alias="production", version_id=version.id,
+        )
+        session.commit()
+        view = repo.resolve(
+            namespace="support", name="triage", selector="production",
+        )
+
+Resolution order for selectors:
+
+1. Exact version UUID
+2. ``rev:N`` revision number
+3. Alias name
+4. User-version label
+5. ``latest`` fallback (highest revision)
 """
 
 from __future__ import annotations

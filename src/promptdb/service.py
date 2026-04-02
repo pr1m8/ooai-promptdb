@@ -1,19 +1,37 @@
-"""Service layer for :mod:`promptdb`.
+"""Orchestration layer for prompt workflows.
 
-Purpose:
-    Provide high-level workflows across persistence and storage adapters.
+:class:`PromptService` coordinates registration, alias movement, resolution,
+rendering, and export across the persistence and storage layers. Both the
+FastAPI API and the Rich CLI delegate to this service.
 
-Design:
-    The service owns alias movement, registration, resolution, rendering, and
-    export logic so both the API and CLI can share it.
+Most application code should use :class:`~promptdb.client.PromptClient`
+instead — it wraps this service with ergonomic helpers for compact references,
+file registration, and LangChain materialization.
 
-Attributes:
-    PromptService: High-level service class.
+Wiring a service manually (the client does this for you)::
 
-Examples:
-    .. code-block:: python
+    from promptdb.db import create_all, create_session_factory
+    from promptdb.storage import LocalBlobStore
+    from promptdb.service import PromptService
 
-        service = PromptService(session_factory, blob_store)
+    create_all("sqlite:///./promptdb.sqlite3")
+    service = PromptService(
+        session_factory=create_session_factory("sqlite:///./promptdb.sqlite3"),
+        blob_store=LocalBlobStore(".blobs"),
+    )
+
+Using the service::
+
+    from promptdb.domain import PromptRegistration, PromptSpec, PromptKind
+
+    version = service.register(PromptRegistration(
+        namespace="support", name="triage",
+        spec=PromptSpec(kind=PromptKind.STRING, template="Hi {name}"),
+        alias="production",
+    ))
+
+    resolved = service.resolve(PromptRef.parse("support/triage:production"))
+    result = service.render(resolved.ref, {"name": "Will"})
 """
 
 from __future__ import annotations

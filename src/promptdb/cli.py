@@ -1,24 +1,28 @@
-"""Rich-powered CLI for :mod:`promptdb`.
+"""Rich-powered CLI for local prompt operations.
 
-Purpose:
-    Provide local workflows for initializing a workspace, registering prompts,
-    listing versions, resolving selectors, rendering prompts, and exporting
-    bundles.
+The CLI provides six commands, all rendering output with Rich tables, panels,
+and syntax-highlighted JSON. It uses the same :class:`~promptdb.client.PromptClient`
+and :class:`~promptdb.service.PromptService` as the API.
 
-Design:
-    The CLI uses the same local client and service layers as the API while
-    presenting results with Rich tables, panels, and syntax-highlighted JSON.
+Commands::
 
-Attributes:
-    main: CLI entry point.
+    promptdb init                 # scaffold a workspace with sample files
+    promptdb list                 # list all registered prompt versions
+    promptdb register-file <path> <namespace> <name>  # register from file
+    promptdb resolve <ref>        # resolve a prompt reference to JSON
+    promptdb render <ref> --var key=value  # render with variables
+    promptdb export-file <ref> <path>     # write version bundle to disk
 
-Examples:
-    .. code-block:: bash
+Prompt references use ``namespace/name:selector`` format::
 
-        promptdb init
-        promptdb list
-        promptdb resolve support/triage:production
-        promptdb render support/triage:production --var question="Where is my refund?"
+    promptdb resolve support/triage:production
+    promptdb resolve support/triage:rev:2
+    promptdb resolve support/triage:latest
+
+The ``register-file`` command supports YAML, JSON, and plain text files.
+For plain text, specify ``--kind string`` or ``--kind chat``.
+
+Entry point: ``promptdb = promptdb.cli:main`` (configured in pyproject.toml).
 """
 
 from __future__ import annotations

@@ -1,22 +1,40 @@
-"""Blob storage adapters for :mod:`promptdb`.
+"""Blob storage adapters for prompt exports and artifacts.
 
-Purpose:
-    Provide local filesystem and MinIO-backed blob storage adapters for prompt
-    exports and related artifacts.
+Two adapters are provided:
 
-Design:
-    The local adapter is fully runnable in tests. The MinIO adapter imports the
-    official MinIO client lazily.
+- :class:`LocalBlobStore` — writes to the local filesystem. No external
+  dependencies. Used by default and in tests.
+- :class:`MinioBlobStore` — writes to an S3-compatible MinIO server. Requires
+  the ``minio`` optional extra (``pip install ooai-promptdb[minio]``).
 
-Attributes:
-    LocalBlobStore: Filesystem-backed blob store.
-    MinioBlobStore: MinIO-backed blob store.
+Both adapters expose the same interface: ``put_text``, ``get_text``, and
+``presign_upload``.
 
-Examples:
-    >>> store = LocalBlobStore('.tmp-blobs')
-    >>> key = store.put_text('demo.txt', 'hello')
-    >>> store.get_text(key)
-    'hello'
+Local usage::
+
+    from promptdb.storage import LocalBlobStore
+
+    store = LocalBlobStore(".blobs")
+    store.put_text("exports/triage/v1.json", '{"spec": ...}')
+    content = store.get_text("exports/triage/v1.json")
+
+MinIO usage::
+
+    from promptdb.storage import MinioBlobStore
+
+    store = MinioBlobStore(
+        endpoint="localhost:9000",
+        access_key="minioadmin",
+        secret_key="minioadmin",
+        bucket="promptdb",
+    )
+    store.put_text("exports/triage/v1.json", '{"spec": ...}')
+
+The :func:`object_metadata` helper builds relational metadata dicts for
+persisting blob references in the ``prompt_assets`` table.
+
+Selecting a backend is done through ``PROMPTDB_STORAGE_BACKEND`` (``local``
+or ``minio``) in :class:`~promptdb.settings.AppSettings`.
 """
 
 from __future__ import annotations

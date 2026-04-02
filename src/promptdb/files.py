@@ -1,23 +1,38 @@
-"""File helpers for :mod:`promptdb`.
+"""Load prompts from files and write specs and version bundles to disk.
 
-Purpose:
-    Load prompts from plain-text or structured files and write prompt specs or
-    resolved versions back to disk.
+Supported input formats:
 
-Design:
-    Plain-text files are convenient for authoring simple prompts, while JSON and
-    YAML files can capture the full :class:`~promptdb.domain.PromptSpec` shape.
+- **YAML / JSON** (``.yaml``, ``.yml``, ``.json``) — parsed as a full
+  :class:`~promptdb.domain.PromptSpec` with kind, messages, metadata, etc.
+- **Plain text** (``.txt``, ``.md``, ``.prompt``, ``.jinja``, ``.mustache``)
+  — the file body becomes the template. You must specify ``kind`` explicitly.
 
-Attributes:
-    load_prompt_file: Create a prompt spec from a file.
-    save_prompt_spec: Write a prompt specification to a file.
-    write_version_bundle: Write a version view to a file.
+Loading a structured file::
 
-Examples:
-    .. code-block:: python
+    from promptdb.files import load_prompt_file
 
-        spec = load_prompt_file('prompts/demo.yaml')
-        save_prompt_spec(spec, 'build/demo.json')
+    spec = load_prompt_file("prompts/support_classifier.yaml")
+    print(spec.kind)       # PromptKind.CHAT
+    print(spec.messages)   # [ChatMessage(...), ...]
+
+Loading a plain-text file::
+
+    spec = load_prompt_file(
+        "prompts/answerer.md", kind=PromptKind.STRING,
+    )
+
+Saving a spec back to disk::
+
+    from promptdb.files import save_prompt_spec
+
+    save_prompt_spec(spec, "build/classifier.yaml")   # YAML
+    save_prompt_spec(spec, "build/classifier.json")   # JSON
+
+Exporting a full version bundle (includes version_id, revision, aliases)::
+
+    from promptdb.files import write_version_bundle
+
+    write_version_bundle(version_view, "build/classifier.json")
 """
 
 from __future__ import annotations
