@@ -46,7 +46,10 @@ jobs:
       - name: Build distributions
         run: pdm build
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: pip install twine && twine upload dist/*
 
   github-release:
     needs: publish-pypi
@@ -69,7 +72,7 @@ jobs:
             echo "body<<ENDOFNOTES"
             echo "$BODY"
             echo ""
-            echo "**PyPI**: https://pypi.org/project/ooai-promptdb/$TAG/"
+            echo "**PyPI**: https://pypi.org/project/ooai-promptdb/${TAG#v}/"
             echo "**Docs**: https://ooai-promptdb.readthedocs.io/en/$TAG/"
             echo "ENDOFNOTES"
           } >> "$GITHUB_OUTPUT"
